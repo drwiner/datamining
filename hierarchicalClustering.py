@@ -1,5 +1,6 @@
 import numpy as np
 from itertools import product
+from clockdeco import clock
 import math
 # import collections
 
@@ -10,55 +11,77 @@ class NamedPoint:
 		self.int_id = int_id
 		self.point = point
 
+	def __hash__(self):
+		return hash(self.int_id)
+
+	def __repr__(self):
+		return 'named_point: ' + str(self.int_id)
+
 class Cluster:
-	def __init__(self, points):
-		self.points = points
-		# self.single_link_sim = dict()
-		# self.complete_link_sim = dict()
-		# self.mean_link_sim = dict()
+	def __init__(self, int_id, points):
+		self.int_id = int_id
+		self.points = list(points)
+
 	def absorb(self, cluster):
-		self.points.update(cluster.points)
+		self.points.extend(cluster.points)
+
+	def __hash__(self):
+		return hash(self.int_id)
 
 	def __len__(self):
 		return len(self.points)
 
+	def __getitem__(self, pos):
+		return self.points[pos]
+
+	def __repr__(self):
+		n = 'cluster: ' + str(self.int_id) + ' --- '
+		return n + ' '.join(str(p) for p in self.points)
+
+
 def dotDistance(s1, s2):
 	return np.dot(s1.point - s2.point, s1.point - s2.point)
+def nopointDist(a1, a2):
+	return np.dot(a1 - a2, a1 - a2)
 
+# @clock
 def singleLink(S1, S2):
 	# S1 and S2 are clusters, possibly with just 1 entity
 	# each entity has a point
-	S_prod = set(product(S1,S2))
-	return min(dotDistance(s1,s2) for s1,s2 in S_prod)
-
-def completeLink(S1, S2):
 	S_prod = set(product(S1, S2))
 	return min(dotDistance(s1,s2) for s1,s2 in S_prod)
 
+# @clock
+def completeLink(S1, S2):
+	S_prod = set(product(S1, S2))
+	return max(dotDistance(s1,s2) for s1, s2 in S_prod)
+
+# @clock
 def meanLink(S1, S2):
 	a1 = (1/len(S1))*sum(s.point for s in S1)
 	a2 = (1/len(S2))*sum(s.point for s in S2)
-	return dotDistance(a1, a2)
+	return nopointDist(a1, a2)
 
 # initial loading
-c1 = open('C1.txt')
+C1 = open('C1.txt')
 points = set()
-for line in c1:
+for line in C1:
 	split_line = line.split()
 	p = np.array([float(i) for i in split_line[1:]])
-	points.add(NamedPoint(split_line[0], p))
+	points.add(NamedPoint(int(split_line[0]), p))
 
-# algorithm
 
 # initialization:
 singleLink_clusters = set()
 completeLink_clusters = set()
 meanLink_clusters = set()
 for point in points:
-	singleLink_clusters.add(Cluster(point))
-	completeLink_clusters.add(Cluster(point))
-	meanLink_clusters.add(Cluster(point))
+	p = [point]
+	singleLink_clusters.add(Cluster(point.int_id, p))
+	completeLink_clusters.add(Cluster(point.int_id, p))
+	meanLink_clusters.add(Cluster(point.int_id, p))
 
+@clock
 def h_clustering(clusters, k, dist_method):
 	clusts = set(clusters)
 	while len(clusts) > k:
@@ -66,6 +89,8 @@ def h_clustering(clusters, k, dist_method):
 		arg_mins = None
 		m = float("inf")
 		for c1, c2 in pairwise_clusters:
+			if c1 == c2:
+				continue
 			value = dist_method(c1, c2)
 			if value < m:
 				m = value
@@ -75,12 +100,62 @@ def h_clustering(clusters, k, dist_method):
 		c1, c2 = arg_mins
 		if len(c1) < len(c2):
 			c2.absorb(c1)
-			clusts -= c1
+			clusts = clusts - {c1}
 		else:
 			c1.absorb(c2)
-			clusts -= c2
+			clusts = clusts - {c2}
 	return clusts
 
-sl_clusts = h_clustering(singleLink_clusters, 4, singleLink)
-cl_clusts = h_clustering(completeLink_clusters, 4, completeLink)
-ml_clusts = h_clustering(meanLink_clusters, 4, meanLink)
+k = 4
+sl_clusts = h_clustering(singleLink_clusters, k, singleLink)
+print('Shortest Link:\n')
+for clust in sl_clusts:
+	print(clust)
+	for point in clust:
+		print(point.int_id,point.point)
+print('\n')
+print('Complete Link:\n')
+cl_clusts = h_clustering(completeLink_clusters, k, completeLink)
+for clust in cl_clusts:
+	print(clust)
+	for point in clust:
+		print(point.int_id, point.point)
+print('\n')
+print('Mean Link:\n')
+ml_clusts = h_clustering(meanLink_clusters, k, meanLink)
+for clust in ml_clusts:
+	print(clust)
+	for point in clust:
+		print(point.int_id, point.point)
+print('\n')
+
+import matplotlib.pyplot as plt
+
+colours = ['r', 'g', 'y', 'b']
+s1 = list(sl_clusts)
+
+for i in range(k):
+	x = [p.point[0] for p in s1[i]]
+	y = [p.point[1] for p in s1[i]]
+	plt.scatter(x, y, c=colours[i])
+
+plt.show()
+
+s1 = list(cl_clusts)
+
+for i in range(k):
+	x = [p.point[0] for p in s1[i]]
+	y = [p.point[1] for p in s1[i]]
+	plt.scatter(x, y, c=colours[i])
+
+plt.show()
+
+s1 = list(ml_clusts)
+
+for i in range(k):
+	x = [p.point[0] for p in s1[i]]
+	y = [p.point[1] for p in s1[i]]
+	plt.scatter(x, y, c=colours[i])
+
+plt.show()
+
