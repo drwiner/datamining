@@ -3,9 +3,9 @@ from hierarchicalClustering import Cluster, NamedPoint
 import collections
 
 def dist(a1, a2):
-	return np.dot(a1 - a2, a1 - a2)
+	return math.sqrt(np.dot(a1 - a2, a1 - a2))
 def dotDistance(s1, s2):
-	return np.dot(s1.point - s2.point, s1.point - s2.point)
+	return math.sqrt(np.dot(s1.point - s2.point, s1.point - s2.point))
 
 def Gonzales(X, k):
 	n = len(X)
@@ -83,20 +83,20 @@ def threeMeansCost(x, C, phi):
 print('gonzales, max 3centers: ' + str(cost_max_3centers))
 print('gonzales, cost 3 means: ' + str(threeMeansCost(x,C, phi)))
 
-def cuDensity(tmc):
-	cu = 0
-	cu_frac = []
-	# stmc = sorted(tmc)
-	s = sum(tmc)
-	for t in tmc:
-		cu += t / s
-		cu_frac.append(cu)
-	return cu_frac
-
-def cuDensityPlot(cu_list, show=True):
-	plt.plot(list(range(len(cu_list))), cu_list,  'ro')
-	if show:
-		plt.show()
+# def cuDensity(tmc):
+# 	cu = 0
+# 	cu_frac = []
+# 	# stmc = sorted(tmc)
+# 	s = sum(tmc)
+# 	for t in tmc:
+# 		cu += t / s
+# 		cu_frac.append(cu)
+# 	return cu_frac
+#
+# def cuDensityPlot(cu_list, show=True):
+# 	plt.plot(list(range(len(cu_list))), cu_list,  'ro')
+# 	if show:
+# 		plt.show()
 
 # 3 center cost max x in X d(x, phi[x])^2
 
@@ -108,16 +108,17 @@ print('here')
 import matplotlib.pyplot as plt
 
 colours = ['r', 'g', 'b', 'y']
-# s1 = list(sl_clusts)
-# print(C[0].point)
-# for i in range(k):
-# 	rel_points = [p for j, p in enumerate(x) if phi[j] == i]
-# 	xes = [p.point[0] for p in rel_points]
-# 	yes = [p.point[1] for p in rel_points]
-# 	plt.scatter(xes, yes, c=colours[i])
-# 	plt.scatter(C[i].point[0], C[i].point[1], c='y')
-#
-# plt.show()
+s1 = list(C.values())
+print(C[0].point)
+for i in range(k):
+	rel_points = [p for j, p in enumerate(x) if phi[j] == i]
+	xes = [p.point[0] for p in rel_points]
+	yes = [p.point[1] for p in rel_points]
+	plt.scatter(xes, yes, c=colours[i])
+	plt.scatter(C[i].point[0], C[i].point[1], c='y')
+
+plt.show()
+
 tmc = []
 for i in range(100):
 	C_kmeans, phi_kmeans = kMeans(x, k)
@@ -127,7 +128,7 @@ for i in range(100):
 	tmc.append(tmc_value)
 
 from collections import Counter
-cuDensityPlot(cuDensity(tmc))
+# cuDensityPlot(cuDensity(tmc))
 
 TC = Counter([math.floor(t) for t in tmc])
 
