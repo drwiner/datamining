@@ -43,9 +43,9 @@ class Cluster:
 
 
 def dotDistance(s1, s2):
-	return np.dot(s1.point - s2.point, s1.point - s2.point)
+	return math.sqrt(np.dot(s1.point - s2.point, s1.point - s2.point))
 def nopointDist(a1, a2):
-	return np.dot(a1 - a2, a1 - a2)
+	return math.sqrt(np.dot(a1 - a2, a1 - a2))
 
 # @clock
 def singleLink(S1, S2):
@@ -169,5 +169,6 @@ def output(k):
 
 	plt.show()
 
-if __name__ == '__main__':
-	output(4)
+# initialLoading(45)
+# initClusters()
+# output(4)

@@ -80,6 +80,7 @@ def readC2():
 	cost_max_3centers = max(dotDistance(elm, C[phi[i]]) for i, elm in enumerate(x))
 	print('gonzales, max 3centers: ' + str(cost_max_3centers))
 	print('gonzales, cost 3 means: ' + str(threeMeansCost(x, C, phi)))
+	return x, C, phi
 
 
 
@@ -114,37 +115,38 @@ def closestToPhi(C, X, closest_centers):
 		phi[i] = C.index(closest_centers[x])
 	return phi
 
-def Lloyds(X, C, k):
+def Lloyds(X, C, phi, k):
 	# arbitrary choice
 	changed = True
-	closest_centers = collections.defaultdict(int)
 	while changed:
 		changed = False
-		for x in X:
-			# find nearest center
-			for i, c in enumerate(C):
-				closest = C[closest_centers[x]]
-				if dotDistance(x, c) < dotDistance(x, closest):
-					closest_centers[x] = i
-					changed = True
 		for i, c in enumerate(C):
-			subset = [x.point for x in X if closest_centers[x] == i]
+			for j, x in enumerate(X):
+				closest = C[phi[j]]
+				if dotDistance(x, c) < dotDistance(x, closest):
+					phi[j] = i
+
+		for i, c in enumerate(C):
+
+			subset = [x.point for j, x in enumerate(X) if phi[j] == i]
 			s = sum(subset)
-			if len(subset) == 0:
-				print('something went wrong')
-				break
 			avg = s / len(subset)
 			n = NamedPoint('c' + str(i), avg)
-			if C[i] != n:
-				# changed = True
-				C[i] = n
-	return C, closest_centers
+			diff = C[i].point - avg
+			for q in range(len(diff)):
+				if diff[q] > 0:
+					changed = True
+					C[i] = n
+					break
 
-def run_Lloyds_hw():
+		print('new round')
+	return C, phi
+
+def run_Lloyds_hw(x, gC, gPhi):
 	# problem a
 	k = 3
 	Clusters = x[0:k]
-	Clusters, closest_centers_map = Lloyds(x, Clusters, k)
+	Clusters, closest_centers_map = Lloyds(x, Clusters, [0 for i in range(len(x))], k)
 	# phi = closestToPhi(Clusters, x, closest_centers_map)
 	print('dude')
 
@@ -152,7 +154,7 @@ def run_Lloyds_hw():
 	s1 = list(Clusters)
 	print('you are looking at lloyds {1,2,3}')
 	for i in range(k):
-		rel_points = [p for p in x if closest_centers_map[p] == i]
+		rel_points = [p for j, p in enumerate(x) if closest_centers_map[j] == i]
 		xes = [p.point[0] for p in rel_points]
 		yes = [p.point[1] for p in rel_points]
 		plt.scatter(xes, yes, c=colours[i])
@@ -165,12 +167,12 @@ def run_Lloyds_hw():
 	lloyds_a_3means = threeMeansCost(x, Clusters, closest_centers_map)
 	print(lloyds_a_3means)
 
-	# C is the gonzales output before
-	Clusters, closest_centers_map = Lloyds(x, list(C.values()), k)
+	#C is the gonzales output before
+	Clusters, closest_centers_map = Lloyds(x, list(gC.values()), gPhi, k)
 	colours = ['r', 'g', 'b', 'y']
 	s1 = list(Clusters)
 	for i in range(k):
-		rel_points = [p for p in x if closest_centers_map[p] == i]
+		rel_points = [p for j, p in enumerate(x) if closest_centers_map[j] == i]
 		xes = [p.point[0] for p in rel_points]
 		yes = [p.point[1] for p in rel_points]
 		plt.scatter(xes, yes, c=colours[i])
@@ -190,7 +192,7 @@ def run_Lloyds_hw():
 	allclusters = list()
 	for i in z:
 		C_kmeans, phi_kmeans = kMeans(x, k)
-		clusters, phi = Lloyds(x, list(C_kmeans.values()), k)
+		clusters, phi = Lloyds(x, list(C_kmeans.values()), phi_kmeans, k)
 		if clusters in allclusters:
 			sames += 1
 		else:
@@ -216,7 +218,8 @@ def run_Lloyds_hw():
 	for i in range(max(TC.keys())):
 		cu += TC[i]/d
 		cu_dict.update({i: cu})
-	# plt.scatter(list(cu_dict.keys()), list(cu_dict.values()))
-	# plt.show()
+	plt.scatter(list(cu_dict.keys()), list(cu_dict.values()))
+	plt.show()
 
-
+# x, C, phi = readC2()
+# run_Lloyds_hw(x, C, phi)
